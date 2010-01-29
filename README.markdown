@@ -18,8 +18,18 @@ everything. In this case, the tools are [YAML](http://yaml.org),
 [Rake](http://rake.rubyforge.org) and
 [RDiscount](http://github.com/rtomayko/rdiscount).
 
-Just download the Rakefile, stick it in a directory somewhere, and run
+Usage
+-----
 
-  rake
+Just download the Rakefile, stick it in a directory somewhere, write a file in
+[Markdown](http://daringfireball.net/projects/markdown/) called "index.txt,
+(in the same directory), and run
 
-I'll update this documentation at some point.
+    rake website
+
+It will make the index.html file for you. Wow.
+
+TODO
+----
+
+Update this documentation.
