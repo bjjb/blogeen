@@ -9,7 +9,76 @@
   <body>
     <h1>Blogín</h1>
 
-<p>A teenchy website generator.</p>
+<div class="CodeRay">
+  <div class="code"><pre><span style="color:#888"># JJ's Rakefile</span>
+<span style="color:#888"># Converts Markdown text files to HTML.</span>
+require <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">erb</span><span style="color:#710">'</span></span>
+require <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">rubygems</span><span style="color:#710">'</span></span>
+require <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">rdiscount</span><span style="color:#710">'</span></span>
+require <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">rake/clean</span><span style="color:#710">'</span></span>
+
+<span style="color:#036;font-weight:bold">HERE</span> = <span style="color:#036;font-weight:bold">Rake</span>.original_dir
+<span style="color:#036;font-weight:bold">Dir</span>[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="background:#ddd;color:black"><span style="background:#ddd;font-weight:bold;color:#666">#{</span><span style="color:#036;font-weight:bold">HERE</span><span style="background:#ddd;font-weight:bold;color:#666">}</span></span><span style="">/*.rake</span><span style="color:#710">&quot;</span></span>].each <span style="color:#080;font-weight:bold">do</span> |rakefile|
+  load rakefile
+<span style="color:#080;font-weight:bold">end</span>
+
+namespace <span style="color:#A60">:website</span> <span style="color:#080;font-weight:bold">do</span>
+  <span style="color:#036;font-weight:bold">LAYOUT_FILE</span> = <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="background:#ddd;color:black"><span style="background:#ddd;font-weight:bold;color:#666">#{</span><span style="color:#036;font-weight:bold">HERE</span><span style="background:#ddd;font-weight:bold;color:#666">}</span></span><span style="">/layout.html.erb</span><span style="color:#710">&quot;</span></span>
+  <span style="color:#036;font-weight:bold">LAYOUT</span> = <span style="color:#080;font-weight:bold">if</span> <span style="color:#036;font-weight:bold">File</span>.exists?(<span style="color:#036;font-weight:bold">LAYOUT_FILE</span>)
+    <span style="color:#036;font-weight:bold">File</span>.read(<span style="color:#036;font-weight:bold">LAYOUT_FILE</span>)
+  <span style="color:#080;font-weight:bold">else</span>
+  <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&lt;&lt;ERB</span></span><span style="background-color:#fff0f0;color:#D20"><span style="">
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Strict//EN&quot;
+    &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd&quot;&gt;
+&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; xml:lang=&quot;en&quot; lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;link rel='stylesheet' type='text/css' href='/style.css' /&gt;
+    &lt;title&gt;&lt;%= title %&gt;&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;%= html %&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</span><span style="color:#710">
+ERB</span></span>
+  <span style="color:#080;font-weight:bold">end</span>
+
+  <span style="color:#036;font-weight:bold">TXT</span> = <span style="color:#036;font-weight:bold">FileList</span>[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="background:#ddd;color:black"><span style="background:#ddd;font-weight:bold;color:#666">#{</span><span style="color:#036;font-weight:bold">HERE</span><span style="background:#ddd;font-weight:bold;color:#666">}</span></span><span style="">/**/*.txt</span><span style="color:#710">&quot;</span></span>]
+  <span style="color:#036;font-weight:bold">YML</span> = <span style="color:#036;font-weight:bold">TXT</span>.ext(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">yml</span><span style="color:#710">'</span></span>)
+  <span style="color:#036;font-weight:bold">HTML</span> = <span style="color:#036;font-weight:bold">TXT</span>.ext(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">html</span><span style="color:#710">'</span></span>)
+
+  <span style="color:#036;font-weight:bold">CLEAN</span>.include(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="background:#ddd;color:black"><span style="background:#ddd;font-weight:bold;color:#666">#{</span><span style="color:#036;font-weight:bold">HERE</span><span style="background:#ddd;font-weight:bold;color:#666">}</span></span><span style="">/**/*.html</span><span style="color:#710">&quot;</span></span>)
+
+  rule <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">.html</span><span style="color:#710">'</span></span> =&gt; <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">.yml</span><span style="color:#710">'</span></span> <span style="color:#080;font-weight:bold">do</span> |rule|
+    y = <span style="color:#036;font-weight:bold">YAML</span>.load(<span style="color:#036;font-weight:bold">File</span>.read(rule.source))
+    y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">html</span><span style="color:#710">'</span></span>] = <span style="color:#036;font-weight:bold">RDiscount</span>.new(y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">content</span><span style="color:#710">'</span></span>]).to_html
+    erb = <span style="color:#036;font-weight:bold">ERB</span>.new(<span style="color:#036;font-weight:bold">LAYOUT</span>)
+    html = erb.result(<span style="color:#036;font-weight:bold">OpenStruct</span>.new(y).send(<span style="color:#A60">:binding</span>))
+    <span style="color:#036;font-weight:bold">File</span>.open(rule.name, <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">w</span><span style="color:#710">'</span></span>) <span style="color:#080;font-weight:bold">do</span> |f|
+      f.print(html)
+    <span style="color:#080;font-weight:bold">end</span>
+  <span style="color:#080;font-weight:bold">end</span>
+
+  rule <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">.yml</span><span style="color:#710">'</span></span> =&gt; <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">.txt</span><span style="color:#710">'</span></span> <span style="color:#080;font-weight:bold">do</span> |rule|
+    text = <span style="color:#036;font-weight:bold">File</span>.read(rule.source)
+    y = <span style="color:#036;font-weight:bold">File</span>.exists?(rule.name) ? <span style="color:#036;font-weight:bold">YAML</span>.load(<span style="color:#036;font-weight:bold">File</span>.read(rule.name)) : {}
+    y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">title</span><span style="color:#710">'</span></span>] ||= <span style="color:#036;font-weight:bold">File</span>.basename(rule.name, <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">.yml</span><span style="color:#710">'</span></span>).split(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">-</span><span style="color:#710">'</span></span>).join(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style=""> </span><span style="color:#710">'</span></span>)
+    y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">content</span><span style="color:#710">'</span></span>] = text
+    y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">description</span><span style="color:#710">'</span></span>] ||= text.split(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="color:#b0b">\n</span><span style="color:#b0b">\n</span><span style="color:#710">&quot;</span></span>)[<span style="color:#00D;font-weight:bold">1</span>].gsub(<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="color:#b0b">\n</span><span style="color:#710">&quot;</span></span>, <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style=""> </span><span style="color:#710">&quot;</span></span>)
+    y[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">author</span><span style="color:#710">'</span></span>] ||= <span style="color:#036;font-weight:bold">ENV</span>[<span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">USER</span><span style="color:#710">'</span></span>]
+    <span style="color:#036;font-weight:bold">File</span>.open(rule.name, <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">'</span><span style="">w</span><span style="color:#710">'</span></span>) <span style="color:#080;font-weight:bold">do</span> |f|
+      <span style="color:#036;font-weight:bold">YAML</span>.dump(y, f)
+    <span style="color:#080;font-weight:bold">end</span>
+  <span style="color:#080;font-weight:bold">end</span>
+
+  desc <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="">Build HTML files from the current directory</span><span style="color:#710">&quot;</span></span>
+  task <span style="color:#A60">:build</span> =&gt; <span style="color:#036;font-weight:bold">HTML</span>
+<span style="color:#080;font-weight:bold">end</span>
+
+desc <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="">Build the HTML pages</span><span style="color:#710">&quot;</span></span>
+task <span style="color:#A60">:website</span> =&gt; <span style="background-color:#fff0f0;color:#D20"><span style="color:#710">&quot;</span><span style="">website:build</span><span style="color:#710">&quot;</span></span>
+</pre></div>
+</div>
 
   </body>
 </html>
