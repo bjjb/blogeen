@@ -66,7 +66,8 @@ Code Highlighting
 If you have [pygments][http://pygments.org/] installed, then you can add
 `highlight: pygmentize` to your site.yml, and all pre-blocks will be run
 through the executable (it _must_ be in your `PATH`). Specify the lexer on the
-first line of the <pre> block, with `#!_lang_`.
+first line of the block, with `#!_lang_`, thusly:
+
 
     #!java
     public static void main(String argv[]) {
