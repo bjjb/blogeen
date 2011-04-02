@@ -25,11 +25,27 @@ Just download the Rakefile, stick it in a directory somewhere, write a file in
 [Markdown](http://daringfireball.net/projects/markdown/) called "index.txt,
 (in the same directory), and run
 
-    rake website
+rake website
 
 It will make the index.html file for you. Wow.
 
-TODO
-----
+If you already have a Rakefile for your site, and you don't want it to
+interfere, that's ok. You can just rename the Blogín Rakefile to
+"blogeen.rake" (or something), require it by your main rakefile, and use the
+task "blogeen:website" whenever you want to regenerate.
 
-Update this documentation.
+I don't like Markdown!
+----------------------
+
+No bother. Change the corresponding line in the Rakefile. It's pretty well
+commented, you'll figure it out. Try changing `TXT_PROCESSOR` to something
+like
+
+    lambda { RedCloth.new(self).to_html }
+
+Don't forget to `require 'redcloth'` before calling the lambda.
+
+It doesn't do X, Y or Z
+-----------------------
+
+I don't care. Change it!
