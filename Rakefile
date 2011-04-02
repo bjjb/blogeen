@@ -58,8 +58,6 @@ TARGETS = FileList.new("**/*.txt").ext("html")
 # <pagename>.yml.
 CONFIG = {
   :title => "My Website",
-  :template => "template.html.erb",
-  :layout => "layout.html.erb",
   :markdown => "rdoc",
   :server => "http://localhost:8033",
   :base => "/"
