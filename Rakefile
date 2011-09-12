@@ -13,7 +13,7 @@
 #
 # Modify the client-side behaviour with application.js, or in the template.
 #
-# Start a server with rake:server, and see how it looks.
+# Start a server with rake server, and see how it looks.
 #
 # Use rdoc, Markdown (with rdiscount) or Textile (with redcloth) to write your
 # pages, or simply write them in HTML.
@@ -39,6 +39,8 @@ require 'erb'
 require 'yaml'
 require 'time'
 require 'digest/md5'
+require 'webrick'
+require 'rubygems'
 require 'rake/clean'
 
 # Index files - found by looking for index.*.erb, and removing the .erb
@@ -54,43 +56,62 @@ CLOBBER.include FileList.new("**/*.txt").ext("yml")
 # Files to build
 TARGETS = FileList.new("**/*.txt").ext("html")
 
+class Hash
+  def deep_merge!(y)
+    y.each do |k,v|
+      if self[k].is_a?(Hash) and y[k].is_a?(Hash)
+        self[k].deep_merge!(y[k])
+      else
+        self[k] = y[k]
+      end
+    end
+  end
+end
+
 # Default settings - overridden by site.yml, or (for specific pages)
 # <pagename>.yml.
-CONFIG = {
+@cfg = {
   :title => "My Website",
+  :template => "template.html.erb",
+  :layout => "layout.html.erb",
   :markdown => "rdoc",
-  :server => "http://localhost:8033",
-  :base => "/"
+  :server => {
+    :address => "127.0.0.1",
+    :port => "8033",
+    :root => File.dirname(__FILE__)
+  }
 }
-CONFIG.merge!(YAML.load_file('site.yml')) if File.exists?('site.yml')
+@cfg.deep_merge!(YAML.load_file('site.yml')) if File.exists?('site.yml')
 
-# A helper method, to convert text to HTML using RDoc (which is built into
-# most Ruby installations).
+# A helper method, to convert text to HTML (using RDoc)
 def rdoc(text)
-  require 'rdoc/markup/simple_markup' unless defined?(SM::SimpleMarkup) === "constant"
-  require 'rdoc/markup/simple_markup/to_html' unless defined?(SM::ToHtml) === "constant"
+  require 'rdoc/markup/simple_markup'
+  require 'rdoc/markup/simple_markup/to_html'
   sm_p, sm_h = SM::SimpleMarkup.new, SM::ToHtml.new
   sm_p.convert(text, sm_h)
 end
 
+# A helper method to convert text to HTML (using Kramdown)
+def kramdown(text)
+  require 'kramdown'
+  Kramdown::Document.new(text).to_html
+end
+
 # A helper method to convert text to HTML (using RDiscount)
 def rdiscount(text)
-  require 'rubygems' unless defined?(Gem) === "constant"
-  require 'rdiscount' unless defined?(RDiscount) === "constant"
+  require 'rdiscount'
   RDiscount.new(text).to_html
 end
 
 # A helper method to convert text to HTML (using RedCloth)
 def redcloth(text)
-  require 'rubygems' unless defined?(Gem) === "constant"
-  require 'redcloth' unless defined?(RedCloth) === "constant"
+  require 'redcloth'
   RedCloth.new(text).to_html
 end
 
 # A helper method to convert text to HTML (using Maruku)
 def maruku(text)
-  require 'rubygems' unless defined?(Gem) === "constant"
-  require 'maruku' unless defined?(Maruku) === "constant"
+  require 'maruku'
   Maruku.new(text).to_html
 end
 
@@ -98,7 +119,7 @@ end
 # and Nokogiri. Looks for a shelang (like #python) at the top, which will
 # not be printed.
 def pygments(html)
-  require 'nokogiri' unless defined?(Nokogiri) === "constant"
+  require 'nokogiri'
   doc = Nokogiri::HTML(html)
   doc.css('pre code').each do |pre|
     h = pre.inner_text.split("\n")
@@ -120,18 +141,18 @@ rule '.yml' => '.txt' do |t|
   page.merge(YAML.load_file(t.name)) if File.exists?(t.name)
   page[:source] = t.source
   page[:name] = t.name.ext("html")
-  page[:path] = "#{CONFIG[:base]}#{page[:name]}"
-  page[:url] = "#{CONFIG[:server]}#{page[:path]}"
+  page[:path] = "#{@cfg[:base]}#{page[:name]}"
+  page[:url] = "#{@cfg[:host]}#{page[:path]}"
   page[:lastmod] = File.mtime(t.source)
   page[:pubdate] ||= File.ctime(t.source)
   page[:title] ||= t.name.pathmap("%n").split("-").map { |s| s[0..0].upcase + s[1..-1] }.join(" ")
   page[:summary] ||= "No summary"
-  File.open(t.name, "w") { |f| YAML.dump(CONFIG.merge(page), f) }
+  File.open(t.name, "w") { |f| YAML.dump(@cfg.merge(page), f) }
 end
 
 # The rule for building a .html file from a .yml file 
 rule '.html' => '.yml' do |t|
-  config = CONFIG.merge(YAML.load_file(t.source))
+  config = @cfg.merge(YAML.load_file(t.source))
   page = OpenStruct.new(config)
   page.content = send(page.markdown, File.read(page.source))
   page.content = ERB.new(File.read(page.template), 0, '-').result(binding) if page.template
@@ -142,30 +163,37 @@ end
 
 # The rule for building an index.* file
 index = lambda do |t|
-  pages = TARGETS.map { |f| OpenStruct.new(CONFIG.merge(YAML.load_file(f.ext("yml")))) }
-  page = OpenStruct.new(CONFIG.merge(:title => "Index"))
+  pages = TARGETS.map { |f| OpenStruct.new(@cfg.merge(YAML.load_file(f.ext("yml")))) }
+  page = OpenStruct.new(@cfg.merge(:title => "Index"))
   content = ERB.new(File.read("#{t.name}.erb"), 0, '-').result(binding)
   File.open(t.name, "w") { |f| f.print(content) }
   if t.name == 'index.html' # apply the layout, too
-    page = OpenStruct.new(CONFIG)
+    page = OpenStruct.new(@cfg)
     page.content = File.read(t.name)
-    File.open(t.name, "w") { |f| f.print(ERB.new(File.read(CONFIG[:layout]), 0, '-').result(binding)) }
+    File.open(t.name, "w") { |f| f.print(ERB.new(File.read(@cfg[:layout]), 0, '-').result(binding)) }
   end
 end
 
 # Any index file will trigger a rebuild of stale targets
 INDICES.each { |f| file(f => TARGETS, &index) }
 
+# Helper tasks
+task :config do
+
+end
+
 # Our tasks
-desc "Start a server. Options (as environment variables): PORT, ROOT, BASE"
-task :server do
+desc "Start a server. Options (as environment variables): ADDRESS, PORT, BASE,
+ROOT"
+task :server => :index do
   require 'webrick'
   include WEBrick
-  root = ENV['ROOT'] || "."
-  base = ENV['BASE'] || CONFIG[:base] || '/'
-  port = ENV['PORT'] || CONFIG[:port] || 8033
-  server = HTTPServer.new(:Port => port)
-  server.mount(base, HTTPServlet::FileHandler, root)
+  address = ENV['ADDRESS'] || @cfg[:server][:address] || '127.0.0.1'
+  port = ENV['PORT'] || @cfg[:server][:port] || 8033
+  base = ENV['BASE'] || @cfg[:server][:base] || '/'
+  root = ENV['ROOT'] || @cfg[:server][:root] || '.'
+  server = HTTPServer.new(:BindAddress => address, :Port => port)
+  server.mount base, HTTPServlet::FileHandler, root
   Signal.trap("INT") { server.shutdown }
   server.start
 end
