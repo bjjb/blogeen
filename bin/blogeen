@@ -1,0 +1,10 @@
+#! /usr/bin/env ruby -w
+
+dir = ARGV.shift || '.'
+if dir == 'help' || dir == '-h' || dir == '--help' or !ARGV.empty?
+  puts "Usage: blogeen [dir]\n\tCreates a new blog (default dir is '.')"
+  exit 1
+end
+
+require 'blogeen'
+Blogeen.new(dir).init
